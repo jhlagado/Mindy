@@ -1,0 +1,9 @@
+.engine mycomputer
+
+.include "constants.asm"
+.include "IOSerial.asm"
+
+    jp   start
+
+.include "MINDY.asm"
+.include "ram.asm"
