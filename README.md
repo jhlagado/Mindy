@@ -1,302 +1,748 @@
-# Mindy
+# Mindy Language 1.3
+
+Mindy is a minimalist character-based interpreter but one which aims at fast performance, readability and ease of use. It is written for the Z80 microprocessor and is 2K.
+
+- [What is Mindy?](#what-is-Mindy)
+- [Reverse Polish Notation (RPN)](<#reverse-polish-notation-(rpn)>)
+- [Numbers](#numbers)
+  - [Decimal numbers](#decimal-numbers)
+  - [Hexadecimal numbers](#hexadecimal-numbers)
+  - [Formatting numbers](#formatting-numbers)
+- [Printing](#printing)
+  - [Printing numbers](#printing-numbers)
+  - [Printing text](#printing-text)
+- [Stack Manipulation](#stack-maniplation)
+  - [Duplicate](#duplicate)
+  - [Drop](#drop)
+  - [Swap](#swap)
+  - [Over](#over)
+  - [Rotate](#rotate)
+- [Variables](#variables)
+- [System variables](#system-variables)
+- [Basic arithmetic operations](#basic-arithmetic-operations)
+- [Logical operators](#logical-operators)
+- [Arrays](#arrays)
+  - [Basic arrays](#basic-arrays)
+  - [Array size](#array-size)
+  - [Nested arrays](#nested-arrays)
+  - [Byte arrays](#byte-arrays)
+- [Loops](#loops)
+- [Conditional code](#conditional-code)
+- [Functions](#functions)
+  - [Function with multiple arguments](#function-with-multiple-arguments)
+  - [Calling functions](#calling-functions)
+  - [Using functions](#using-functions)
+  - [Anonymous functions](#anonymous-functions)
+- [Appendices](#appendices)
+  - [Using Mindy on the TEC-1](#using-Mindy-on-the-tec-1)
+  - [List of operators](#list-of-operators)
+  - [Maths Operators](#maths-operators)
+  - [Logical Operators](#logical-operators-1)
+  - [Stack Operations](#stack-operations)
+  - [Input & Output Operations](#input-&-output-operations)
+  - [Loops and conditional execution](#loops-and-conditional-execution)
+  - [Memory and Variable Operations](#memory-and-variable-operations)
+  - [Array Operations](#array-operations)
+  - [System Variables](#system-variables-1)
+  - [Miscellaneous](#miscellaneous)
+  - [Utility commands](#utility-commands)
+  - [Control keys](#control-keys)
 
-A Minimal Interpreter in Z80 assembly language for small Z80 systems such as the TEC-1 and RC2014.
+## <a name='what-is-Mindy'></a>What is Mindy?
 
-## New
+Mindy is a bytecode interpreter - this means that all of its instructions are 1 byte long. However,
+the choice of instruction uses printable ASCII characters, as a human readable alternative to assembly
+language. The interpreter handles 16-bit integers and addresses which is sufficient for small applications
+running on an 8-bit cpu.
 
-- https://www.youtube.com/watch?v=m66y6C54Cds
+## <a name='reverse-polish-notation-(rpn)'></a>Reverse Polish Notation (RPN)
 
-## What is Mindy ?
+RPN is a [concatenative](https://concatenative.org/wiki/view/Concatenative%20language)
+way of writing expressions in which the operators come after their operands. Concatenative
+languages make use of a stack which is uses to collect data to do work on. The results
+are pushed back on the stack.
 
-Mindy is a tiny, stack based language based on Forth. On the Z80 it can be implemented in fewer than 2048 bytes of machine code - and it is relatively quick compared to other interpreted languages.
+Here is an example of a simple Mindy program that uses RPN:
 
-It uses reverse Polish notation (RPN) so you have to put the operands before the operator. It's just like the old HP calculators from 50 years ago.
+```
+10 20 + .
+```
 
-If you want to add two numbers you just type:
+As the interpreter encounters numbers it pushes them on to the stack. Then it encounters the
+`+` operator which is uses to add the two items on the stack and pushes the result back on the stack.
+The result becomes the data for the `.` operator which prints the number to the console.
 
-123 456 + .
+## <a name='numbers'></a>Numbers
 
-When you hit return the result will be displayed thus
+Mindy on the Z80 uses 16-bit integers to represent numbers. A valid (but not very
+interesting) Mindy program can be simply a sequence of numbers. Nothing will happen
+to them though until the program encounters an operator.
 
-00579
+There are two main types of numbers in Mindy: decimal numbers and hexadecimal numbers.
 
-> This is the cursor / prompt that confirms that the code has been executed and control has been passed back to the User.
+### <a name='decimal-numbers'></a>Decimal numbers
 
-## Fundamentals
+Decimal numbers are represented in Mindy in the same way that they are represented
+in most other programming languages. For example, the number `12345` is represented
+as `12345`. A negative number is preceded by a `-` as in `-786`.
 
-Like other small interpreted languages, the intention of Mindy is to create a 16-bit virtual machine by combining the mostly 8-bit operations available on the Z80, to provide 16-bit integer arithmetic and variable handling.
+### <a name='hexadecimal-numbers'></a>Hexadecimal numbers
 
-The language needs the basic arithmetic operations of ADD, SUBTRACT, MULTIPLY and DIVIDE. These are implemented as 16-bit integer operations and invoked using the familiar characters +, -, \* and /.
+Hexadecimal numbers are represented in Mindy using the uppercase letters `A` to `F`
+to represent the digits `10` to `15`. Hexadecimal numbers are prefixed with a `'` character. So for example, the hexadecimal number `1F3A` is represented as `'1F3A`.
+Unlike decimal numbers, hexadecimal numbers are assumed to be positive in Mindy.
 
-These are augmented by the bitwise Boolean operators AND, OR, XOR, INVERT and 2's complement NEGATE.
+## <a name='printing'></a>Printing
 
-With Mindy, these instructions are just one byte long and a look-up table is used instead of a switch-case structure. When using an 8-bit microprocessor, such as the Z80, it is simpler and faster to handle 8-bit instructions, so Mindy uses a bytecode system, rather than the 16-bit threaded code that is used by a conventional Forth.
+### <a name='printing-numbers'></a>Printing numbers
 
-In the example above 123 456 + .
+Mindy provides commands for printing numbers in decimal and hexadecimal format.
 
-The numerical strings 123 and 456 are evaluated as 16-bit binary numbers and placed on the data stack. The plus symbol is interpreted as a jump to the routine that performs a 16-bit addition of the top two elements on the data stack, placing their sum on the top of the data stack. The dot character prints out the top value of the data stack, consuming it at the same time.
+The `.` operator prints numbers to the console in decimal.
+The `,` operator prints numbers to the console in hexadecimal.
 
-In addition to the arithmetic and boolean operations, there are also the three comparison operators Greater Than, Less Than and Equal to, represented by symbols > < and =.
+### <a name='printing-text'></a>Printing text
 
-The top two elements on the stack will be compared, resulting in 1 if the comparison is TRUE and 0 if the comparison is FALSE.
+Mindy allows the user to easily print literal text by using \` quotes.
 
-With the comparison operators, it becomes possible to develop conditionally executed code, which forms the basis of program control words, such as IF, THEN, ELSE, and looping and branching structures.
+For example
 
-In total there are approximately 30 characters that are recognised as the internal instruction set, or primitives. From these characters the user can construct further definitions to extend the usefulness of the language.
+```
+100 x !
+`The value of x is ` x .
+```
 
-## How Mindy Works.
+prints `The value of x is 100`
 
-Mindy is an interpreted language that uses printable ascii characters as its "instructions". There are 95 such characters:
+## <a name='stack-maniplation'></a>Stack Manipulation
 
-- 10 Numerals - 0-9 used for decimal number entry
-- 11 Alphanumerics - 0-F used for hexadecimal number entry (only uppercase chars are recognized as hex digits)
-- 26 lowercase letters - used as User Variables
-- 26 system variables - most are available for general use
-- 33 arithmetic and punctuation codes - used to select the program operation aka "primitives"
-- 22 "alternate" codes - to extend the basic set of alphanumeric characters, these are prefixed by \
-- 26 uppercase letters - used as User Commands
+In Mindy, the stack is a central data structure that stores values temporarily.
+Let's explore some fundamental operators that help you manage the stack
 
-The interpreter scans a text string, held in a text buffer, one character at a time. It then uses a look-up table to broadly categorise the current character into one of the above groups.
+### <a name='duplicate'></a>Duplicate
 
-For each category of character there is a handling routine, which determines how the character should be processed.
+The `#` or "dup" operator _duplicates_ the top element of the stack.
 
-NUMBERS
+The following code prints `10 10`
 
-A number string such as 1234 will be scanned one digit at a time and converted into a 16-bit binary number using a routine called num\_ . The converted binary number is then placed on the top of the data stack which is used as a means of temporary storage, before being used later. Multiple numbers may be entered in a sequence separated by spaces: 1234 5678 3579 When the return key is pressed they will be processed in turn and each placed onto the stack. They may then be used as operands or parameters for a calculation or other function.
+```
+10 # . .
+```
 
-VARIABLES
+### <a name='drop'></a>Drop
 
-User Variables are assigned to the lowercase alpha characters using a routine called var\_ The user variables are stored in an array of 26 pairs of bytes in RAM. The lowercase character is a shorthand way of addressing the pair of bytes that holds the variable. It is not usually necessary to know specifically at what address the variable is held at, as it can always be accessed using its name.
+The `\` or "drop" removes the top element of the stack.
 
-When a lowercase character is interpreted the variable handler routine converts it to a 16-bit address, and places that address on the top of the stack.
+The following code prints `20`
 
-SYSTEM VARIABLES
-System variables contain values which Mindy uses internally but are available for programmatic use. These are the lowercase letters preceded by a \ e.g. \a, \b, \c etc. However Mindy only uses a few of these variables so the user may use the other ones as they like.
+```
+20 30 \ .
+```
 
-PRIMITIVES
+### <a name='swap'></a>Swap
 
-A primitive is a built-in function, normally stored in ROM and not usually needed to be modified by the User. Primitives will include the familiar mathematical functions such as ADD, SUBtract, MULtiply and DIVide, and also boolean logic operations such as AND, OR, XOR and INVert.
+The `$` of "swap" operator exchanges the positions of the top two elements on the stack.
 
-There are also a small group of primitives that perform operations on the stack, DUP is used to duplicate the top item, DROP will remove the top item, making the second item available. SWAP will exchange the top two items, effectively placing the second item on top.
+The following code prints `50 40`
 
-In total, Mindy contains 33 primitives which are executed when the interpreter finds the relevant symbol. Some of these will be commonly used arithmetic symbols like "+" and "-" Others are allocated to punctuation symbols. The full-stop, or dot character is used to print out the number held on the top of the stack.
+```
+40 50 $ . .
+```
 
-ALTERNATE CODES
-Because ASCII provides only a limited set of symbols to use as primitives, Mindy extends the basic set with a set of symbols prefixed by a \. An alternate code is any symbol or uppercase letter starting with a \ e.g. \+ \D etc. Alternate lowercase letters serve as system variables
+### <a name='over'></a>Over
 
-USER COMMANDS
+The `%` of "over" operator copies the second element from the top of the stack and
+places it on top.
 
-User Commands are what gives Mindy its power and flexibility. Each uppercase letter can be assigned a routine written by the user in the Mindy language. For example you may have a routine which produces a hexadecimal dump of the contents of memory. You could define a routine at D for this DUMP operation. You may also pass parameters to a user routine via the stack. In the case of a hex dump routine it would be common to give it the starting address of the section you want to dump, and this might be written 1234 D. On pressing return, the command will be interpreted and the dump routine will commence printing from location 1234. There are clearly 26 User Commands which is usually enough for most small applications.
+The following code prints `60 70 60`
 
-## Using Mindy on the TEC-1
+```
+60 70 % . . .
+```
 
-Mindy was designed for for small Z80 based systems but specifically with the small memory configuration of the TEC-1 single board computer. It is only 2K to work with the original TEC-1 and interfaces to the serial interface via a simple adapter.
+## <a name='variables'></a>Variables
 
-On initialisation it will present a user prompt ">" followed by a CR and LF. It is now ready to accept commands from the keyboard.
+Variables are named locations in memory that can store data. Mindy has a limited
+number of global variables which have single letter names. In Mindy a variable can
+be referred to by a singer letter from `a` to `z` so there are 26
+global variables in Mindy. Global variables can be used to store numbers, strings, arrays, blocks, functions etc.
 
-## Using Mindy on the RC2014
+To assign the value `10` to the global variable `x` use the `!` operator.
 
-Mindy was developed for the RC2014 Micro Z80 Single Board Computer. This board is supplied with a comprehensive Monitor program (The Small Computer Monitor (SCM) by Stephen Cousins). A 32K ROM contains the monitor and BASIC between $0000 and $7FFF. The 32K RAM starts at $8000, and Mindy is loaded in to run from address $8000.
+```
+10 x !
+```
 
-Install the Intel Hex file RC2014_Mindy.hex by pasting it into the SCM. At the Ready prompt, type G8000 to execute.
+In this example, the number `10` is assigned to the variable `x`
 
-If necessary, you can use the serial getchar and putchar routines that are available within the Small Computer Monitor
+The code below adds `3` to the value stored in variable `x` and then prints it.
 
-See the User Manual pages 45 and 46 on how this is done
+```
+3 x + .
+```
 
-https://smallcomputercentral.files.wordpress.com/2018/05/scmon-v1-0-userguide-e1-0-0.pdf
+The following code assigns the hexadecimal number `'3FFF` to variable `a`
+The second line fetches the value stored in `a` and prints it.
 
-Mindy was assembled using asm80.com, an online 8-bit assembler. It will generate an Intel Hex file that can be pasted into RAM at address $8000 using a serial terminal program. I use TeraTerm when working within the windows environment.
+```
+'3FFF a !
+a .
+```
 
-Once the Mindy code image is pasted into RAM you can run it using the Go command "G8000"
+In this longer example, the number 10 is stored in `a` and the number `20` is
+stored in `b`. The values in these two variables are then added together and the answer
+`30` is stored in `z`. Finally `z` is printed.
 
-On initialisation it will respond:
+```
+10 a !
+20 b !
+a b + z !
+z .
+```
 
-Mindy V1.0
+## <a name='system-variables'></a>System variables
 
-On initialisation it will present a user prompt ">" followed by a CR and LF. It is now ready to accept commands from the keyboard.
+In addition to the 26 general purpose variables, Mindy has a 26 system variables which have special uses. System variables start with a `/` followed by a lowercase character.
 
-## Examples
+## <a name='basic-arithmetic-operations'></a>Basic arithmetic operations
 
-Spaces are shown for clarity, but only necessary to separate consecutive number strings. Most other operators can be concatenated without spaces.
+In this program the numbers `5` and `4` are operands to the operator `*` which
+multiplies them together. The `.` operator prints the result of the
+multiplication.
 
-1234 5678 + . ; ADD 1234 to 5678 and print the result
+```
+5 4 * .
+```
 
-1234 5678 - . ; Subtract 1234 from 5678 and print the result
+This program subtracts `20` from `10` which results in the negative value `-10`
+The `.` operator prints the difference.
 
-1234 a! ; Store 1234 in the variable a
+```
+10 20 - .
+```
 
-5678 b! ; Store 5678 in the variable b
+This program divides 5 with 4 prints the result.
 
-b@ . ; print the value stored in b
+```
+5 4 / . .
+```
 
-a@ b@ + . ; add the contents of a to b and print the sum
+The remainder of the last division operation is available in the `/r` system variable.
 
-a@ b! ; copy the contents of a into b
+```
+/r .
+```
 
-##Loops
+## <a name='logical-operators'></a>Logical operators
 
-0(this code will not be executed but skipped)
-1(this code will be execute once)
-10(this code will execute 10 times)
+Mindy uses numbers to define boolean values.
 
-You can use the comparison operators < = and > to compare 2 values and conditionally execute the code between the brackets.
+- false is represented by the number `0`
+- true is represented by the number `-1`of `'FFFF`.
 
-ARRAYS
+For clarity Mindy allows boolean values to be expressed as `/t` and `/f`
+(that's true and false respectively)
+
+```
+3 0 = .
+```
+
+prints `0`
+
+```
+0 0 = .
+```
+
+prints `1`
+
+Mindy has a set of bitwise logical operators that can be used to manipulate bits. These operators are:
+
+```
+& performs a bitwise AND operation on the two operands.
+| performs a bitwise OR operation on the two operands.
+^ performs a bitwise XOR operation on the two operands.
+~ performs a bitwise NOT on one operand.
+/L shifts the bits of the operand to the left by one.
+/R shifts the bits of the operand to the right by one.
+```
+
+The bitwise logical operators can be used to perform a variety of operations on bits, such as:
+
+- Checking if a bit is set or unset.
+- Setting or clearing a bit.
+- Flipping a bit.
+- Counting the number of set bits in a number.
+
+Here is an example of how to use the bitwise logical operators in Mindy:
+
+Check if the first bit of the number 10 is set
+
+```
+11 1 & ,
+```
+
+this will print 0001
+
+Shift 1 three times to the left (i.e. multiple by 8) and then OR 1 with the least significant bit.
+
+```
+1 3 /L 1 | ,
+```
+
+prints 0009
+
+Shift 1 two times to the left (i.e. multiple by 4) and then XOR '000F and then mask with '000F.
+
+```
+1 2 /L 'F ^ 'F & ,
+```
+
+The following inverts 'FFFF and prints 0
+
+```
+'FFFF ~ .
+```
+
+prints 000B
+
+## <a name='arrays'></a>Arrays
+
+### <a name='basic-arrays'></a>Basic arrays
+
+Mindy arrays are a type of data structure that can be used to store a collection of elements. Arrays are indexed, which means that each element in the array has a unique number associated with it. This number is called the index of the element.
+In Mindy, array indexes start at 0
+
+To create a Mindy array, you can use the following syntax:
+
+_[ element1 element2 ... ]_
+
+for example
+
+```
+[ 1 2 3 ]
+```
+
+Arrays can be assigned to variables just like number values
+
+```
+[ 1 2 3 ] a !
+```
 
 An array of 16-bit numbers can be defined by enclosing them within square brackets:
 
-[1 2 3 4 5 6 7 8 9 0]
+```
+[ 1 2 3 4 5 6 7 8 9 0 ]
+```
 
-Defining an array puts its start address and length onto the stack
+Defining an array puts its start address onto the stack
 
 These can then be allocated to a variable, which acts as a pointer to the array in memory
 
-[1 2 3 4 5 6 7 8 9 0] $ a!
+```
+[ 1 2 3 4 5 6 7 8 9 0 ] a !
+```
 
-The swap $ is used to get the starting address onto the top of the stack and then store that into the variable a.
+To fetch the Nth member of the array, we can create use the index operator `@`
 
-To fetch the Nth member of the array, we can create a colon definition N
+The following prints the item at index 2 (which is 3).
 
-:N @ $ {+ @. ;
+```
+[ 1 2 3 ] 2@  .
+```
 
-### LIST OF PRIMITIVES
+### <a name='array-size'></a>Array size
 
-Mindy is a bytecode interpreter - this means that all of its instructions are 1 byte long. However, the choice of instruction uses printable ASCII characters, as a human readable alternative to assembly language. The interpreter handles 16-bit integers and addresses which is sufficient for small applications running on an 8-bit cpu.
+The size of an array can be determined with the `/S` operator which puts the number
+of items in the array on the stack.
 
-### Maths Operators
+The following prints 5 on the console.
+
+```
+[ 1 2 3 4 5 ] /S .
+```
+
+### <a name='nested-arrays'></a>Nested arrays
+
+In Mindy arrays can be nested inside one another.
+
+The following code shows an array with another array as its second item.
+This code accesses the second item of the first array with `1@ `. It then accesses
+the first item of the inner array with `0@ ` and prints the result (which is 2).
+
+```
+[1 [2 3]] 1@  0@  .
+```
+
+## <a name='loops'></a>Loops
+
+Looping in Mindy is of the form
+
+```
+number (code to execute)
+```
+
+The number represents the number of times the code between parentheses will be repeated. If the number is zero then the code will be skipped. If the number
+is ten it will be repeated ten times. If the number is -1 then the loop will repeat forever.
+
+```
+0(this code will not be executed but skipped)
+1(this code will be execute once)
+10(this code will execute 10 times)
+/f(this code will not be executed but skipped)
+/t(this code will be execute once)
+/u(this code will be execute forever)
+```
+
+This code following prints ten x's.
+
+```
+10 (`x`)
+```
+
+The following code repeats ten times and adds 1 to the variable `t` each time.
+When the loop ends it prints the value of t which is 10.
+
+```
+0t! 10( t 1+ t! ) t .
+```
+
+Mindy provides a special variable `/i` which acts as a loop counter. The counter counts up from zero. Just before the
+counter reaches the limit number it terminates.
+
+This prints the numbers 0 to 9.
+
+```
+10 ( /i . )
+```
+
+Loops can repeat forever by specifying an "unlimited" loop with /u. These can be controlled with the "while" operator `/W`. Passing a false value to /W will terminate the loop.
+
+This code initialises `t` to zero and starts a loop to repeat 10 times.
+The code to repeat accesses the `/i` variable and compares it to 4. When `/i` exceeds 4 it breaks the loop.
+Otherwise it accesses `t` and adds 1 to it.
+
+Finally when the loop ends it prints the value of t which is 5.
+
+```
+0t! /u(/i 4 < /W /i t 1+ t!) t .
+```
+
+Loops can be nested and then special `/j` variable is provided to access the counter of the outer loop.
+
+The following has two nested loops with limits of 2. The two counter variables are summed and added to `t`.
+When the loop ends `t` prints 4.
+
+```
+0t! 2(2(/i /j + t + t! )) t .
+```
+
+## <a name='conditional-code'></a>Conditional code
+
+Mindy's looping mechanism can also be used to execute code conditionally. In Mindy boolean `false` is represented
+by 0 and `true` is represented by 1.
+
+```
+/f(this code will not be executed but skipped)
+/t(this code will be execute once)
+```
+
+The following tests if `x` is less that 5.
+
+```
+3 x!
+x 5 < (`true`)
+```
+
+The syntax for a Mindy IF-THEN-ELSE or "if...else" operator in Mindy is and
+extension of the loop syntax.
+
+```
+boolean (code-block-then) /e (code-block-else)
+```
+
+If the condition is true, then code-block-then is executed. Otherwise, code-block-else is executed.
+
+Here is an example of a "if...else" operator in Mindy:
+
+```
+10 x !
+20 y !
+
+x y > ( `x is greater than y` ) /e ( `y is greater than x` )
+
+```
+
+In this example, the variable x is assigned the value 10 and the variable y is assigned the value 20.
+The "if...else" operator then checks to see if x is greater than y. If it is, then the string
+"x is greater than y" is returned. Otherwise, the string "y is greater than x" is returned.
+
+Here is another example of the "if...else" operator in Mindy. This time, instead of creating a string just to print it, the following
+code conditionally prints text straight to the console.
+
+```
+18 a !
+
+`This person` a 17 > (`can`) /e (`cannot`) `vote`
+```
+
+In this example, the variable a is assigned the value 18. The "if...else" operator
+then checks to see if age is greater than 17. If it is,
+then the text "can" is printed to the console. Otherwise, the string "cannot" is printed.
+
+## <a name='functions'></a>Functions
+
+You can put any code inside `:` and `;` block which tells Mindy to "execute this later".
+
+Functions are stored in variables with uppercase letters. There are 26 variables
+for storing functions in Mindy and use the uppercase letter A to Z.
+
+The following stores a function in the variable `Z`.
+
+```
+:Z `hello` 1. 2. 3. ;
+```
+
+Running the function by stored in uppercase `Z` by referring to it
+
+```
+Z
+```
+
+will print out.
+
+```
+hello 1 2 3
+```
+
+A basic function to square a value.
+
+```
+:F " * ;
+```
+
+The function stored in F duplicates the value on the stack and then multiplies them together.
+
+```
+4 F .
+```
+
+Calling the function with 4 returns 16 which is then printed.
+
+### <a name='function-with-multiple-arguments'></a>Function with multiple arguments
+
+You can also define functions with multiple arguments. For example:
+
+```
+:F $ . . ;
+```
+
+This function swaps the top two arguments on the stack and then prints them using `.`.
+
+### <a name='calling-functions'></a>Calling functions
+
+Functions are called by referring to them
+
+```
+:F * ;
+30 20 F .
+```
+
+This code passes the numbers `30` and `20` to a function which multiplies them and returns
+the result which is then printed.
+
+### <a name='using-functions'></a>Using functions
+
+Once you've assigned functions to variables, you can use them in your Mindy code.
+
+Example:
+
+```
+10 A       // prints 10
+3 7 B      // prints 10, the sum of 3 and 7
+```
+
+In the first line, we execute the function stored in variable `A` with the argument `10`,
+which prints `10`. In the second line, we execute the function stored in variable `B` with
+arguments `3` and `7`, which results in `10` being printed (the sum of the two arguments).
+
+### <a name='anonymous-functions'></a>Anonymous functions
+
+Mindy code is not restricted to upper case variables. Functions an be declared without a
+variable(i.e. anonymously) by using the `::` operator. A function declared this way puts
+the address of the function on the stack.
+
+A function at an address can be executed with the `/G` operator.
+
+This code declares an anonymous function and stores its address in `a`. This function will
+increment its argument by 1.
+
+The next line pushs the number 3 on the stack and executes the function in `a`.
+The function adds 1 and prints 4 to the console.
+
+```
+:: 1+ ; a!
+3 a /G .
+```
+
+Anonymous functions can be stored in arrays and can even be used as a kind of "switch" statement.
+This code declares an array containing 3 anonymous functions. The next line accesses the array at
+index 2 and runs it. "two" is printed to the console.
+
+```
+[:: `zero` ; :: `one` ; :: `two` ;] b!
+b 2@ /G
+```
+
+## <a name='appendices'></a>Appendices
+
+### <a name='using-Mindy-on-the-tec-1'></a>Using Mindy on the TEC-1
+
+Mindy was designed for for small Z80 based systems but specifically with the small memory configuration
+of the TEC-1 single board computer. It is only 2K to work with the original TEC-1 and interfaces to the
+serial interface via a simple adapter.
+
+On initialisation it will present a user prompt ">" followed by a CR and LF. It is now ready to accept
+commands from the keyboard.
+
+### <a name='list-of-operators'></a>List of operators
+
+### <a name='maths-operators'></a>Maths Operators
 
 | Symbol | Description                               | Effect   |
 | ------ | ----------------------------------------- | -------- |
 | -      | 16-bit integer subtraction SUB            | a b -- c |
-| {      | shift the number to the left (2\*)        | a -- b   |
-| }      | shift the number to the right (2/)        | a -- b   |
 | /      | 16-bit by 8-bit division DIV              | a b -- c |
-| \_     | 16-bit negation (2's complement) NEG      | a -- b   |
-| \*     | 8-bit by 8-bit integer multiplication MUL | a b -- c |
-| \>     | 16-bit comparison GT                      | a b -- c |
 | +      | 16-bit integer addition ADD               | a b -- c |
-| <      | 16-bit comparison LT                      | a b -- c |
-| =      | 16 bit comparison EQ                      | a b -- c |
+| \*     | 8-bit by 8-bit integer multiplication MUL | a b -- c |
 
-### Logical Operators
+### <a name='logical-operators-1'></a>Logical Operators
 
-| Symbol | Description        | Effect   |
-| ------ | ------------------ | -------- |
-| \|     | 16-bit bitwise OR  | a b -- c |
-| &      | 16-bit bitwise AND | a b -- c |
-| ^      | 16-bit bitwise XOR | a b -- c |
+| Symbol | Description          | Effect   |
+| ------ | -------------------- | -------- |
+| \>     | 16-bit comparison GT | a b -- c |
+| <      | 16-bit comparison LT | a b -- c |
+| =      | 16 bit comparison EQ | a b -- c |
+| &      | 16-bit bitwise AND   | a b -- c |
+| \|     | 16-bit bitwise OR    | a b -- c |
+| ^      | 16-bit bitwise XOR   | a b -- c |
+| ~      | 16-bit bitwise NOT   | a -- c   |
+| /L     | shift left           | n n --   |
+| /R     | shift right          | n n --   |
 
-Note: logical NOT can be achieved with 0=
+### <a name='stack-operations'></a>Stack Operations
 
-### Stack Operations
+| Symbol | Description                                                          | Effect       |
+| ------ | -------------------------------------------------------------------- | ------------ |
+| \\     | drop the top member of the stack DROP                                | a a -- a     |
+| #      | duplicate the top member of the stack DUP                            | a -- a a     |
+| $      | swap the top 2 members of the stack SWAP                             | a b -- b a   |
+| %      | over - take the 2nd member of the stack and copy to top of the stack | a b -- a b a |
+| /D     | stack depth                                                          | -- n         |
 
-| Symbol | Description                                                          | Effect         |
-| ------ | -------------------------------------------------------------------- | -------------- |
-| '      | drop the top member of the stack DROP                                | a a -- a       |
-| "      | duplicate the top member of the stack DUP                            | a -- a a       |
-| ~      | rotate the top 3 members of the stack ROT                            | a b c -- b c a |
-| %      | over - take the 2nd member of the stack and copy to top of the stack | a b -- a b a   |
-| $      | swap the top 2 members of the stack SWAP                             | a b -- b a     |
+### <a name='input-&-output-operations'></a>Input & Output Operations
 
-### Input & Output Operations
-
-| Symbol | Description                                               | Effect      |
-| ------ | --------------------------------------------------------- | ----------- |
-| ?      | read a char from input                                    | -- val      |
-| .      | print the top member of the stack as a decimal number DOT | a --        |
-| ,      | print the number on the stack as a hexadecimal            | a --        |
-| \`     | print the literal string between \` and \`                | --          |
-| \\.    | print a null terminated string                            | adr --      |
-| \\,    | prints a character to output                              | val --      |
-| \\$    | prints a CRLF to output                                   | --          |
-| \\>    | output to an I/O port                                     | val port -- |
-| \\<    | input from a I/O port                                     | port -- val |
-| #      | the following number is in hexadecimal                    | a --        |
-
-### User Defined Commands
+| Symbol | Description                                    | Effect |
+| ------ | ---------------------------------------------- | ------ |
+| ?      | read a char from input                         | -- c   |
+| .      | print the number on the stack as a decimal     | a --   |
+| ,      | print the number on the stack as a hexadecimal | a --   |
+| \`     | print the literal string between \` and \`     | --     |
+| /E     | prints a character to output                   | n --   |
+| /O     | output to an I/O port                          | n p -- |
+| /I     | input from a I/O port                          | p -- n |
+| '      | the following number is in hexadecimal         | a --   |
 
 | Symbol  | Description                     | Effect   |
 | ------- | ------------------------------- | -------- |
 | ;       | end of user definition END      |          |
 | :<CHAR> | define a new command DEF        |          |
-| \\:     | define an anonynous command DEF |          |
-| \\^     | execute Mindy code at address   | adr -- ? |
-| \\\_    | condtional early return         | b --     |
+| /:      | define an anonymous command DEF | -- adr   |
+| /G      | execute Mindy code at address   | adr -- ? |
+| /X      | execute machine code at address | adr -- ? |
 
 NOTE:
 <CHAR> is an uppercase letter immediately following operation which is the name of the definition
-<NUM> is the namespace number. There are currently 5 namespaces numbered 0 - 4
 
-### Loops and conditional execution
+### <a name='loops-and-conditional-execution'></a>Loops and conditional execution
 
 | Symbol | Description                            | Effect |
 | ------ | -------------------------------------- | ------ |
 | (      | BEGIN a loop which will repeat n times | n --   |
 | )      | END a loop code block                  | --     |
-| \\\~   | if true break out of loop              | b --   |
+| /W     | if false break out of loop             | b --   |
+| /e     | else condition                         | -- b   |
+| /i     | loop counter variable                  | -- n   |
+| /j     | outer loop counter variable            | -- n   |
 
 NOTE 1: a loop with a boolean value for a loop limit (i.e. 0 or 1) is a conditionally executed block of code
 
-e.g. 0(`will not execute`)
+```
+0(`will not execute`)
 1(`will execute`)
+```
 
-NOTE 2: if you _immediately_ follow a code block with another code block, this second code block will execute
-if the condition is 0 (i.e. it is an ELSE clause)
+NOTE 2: if you follow a code block with `/e` followed by another code block, this second code block will execute the "else" condition.
 
-e.g. 0(`will not execute`)(`will execute`)
-1(`will execute`)(`will not execute`)
+```
+0(`will not execute`) /e (`will execute`)
+1(`will execute`) /e (`will not execute`)
+```
 
-### Memory and Variable Operations
+### <a name='memory-and-variable-operations'></a>Memory and Variable Operations
 
-| Symbol | Description                   | Effect        |
-| ------ | ----------------------------- | ------------- |
-| !      | STORE a value to memory       | val adr --    |
-| [      | begin an array definition     | --            |
-| ]      | end an array definition       | -- adr nwords |
-| @      | FETCH a value from memory     | -- val        |
-| \\!    | STORE a byte to memory        | val adr --    |
-| \\[    | begin a byte array definition | --            |
-| \\`    | begin a string definition     | -- adr        |
-| \\@    | FETCH a byte from memory      | -- val        |
+| Symbol | Description             | Effect   |
+| ------ | ----------------------- | -------- |
+| !      | STORE a value to memory | n adr -- |
+| /B     | toggle byte mode        | --       |
 
-### System Variables
+### <a name='array-operations'></a>Array Operations
 
-| Symbol | Description                        | Effect |
-| ------ | ---------------------------------- | ------ |
-| \\a    | data stack start variable          | -- adr |
-| \\b    | base16 flag variable               | -- b   |
-| \\c    | text input buffer pointer variable | -- adr |
-| \\d    | start of user definitions          | -- adr |
-| \\h    | heap pointer variable              | -- adr |
-| \\i    | loop counter variable              | -- adr |
-| \\j    | outer loop counter variable        | -- adr |
+| Symbol | Description               | Effect         |
+| ------ | ------------------------- | -------------- |
+| [      | begin an array definition | --             |
+| ]      | end an array definition   | -- adr         |
+| @      | get address of array item | adr idx -- adr |
+| /S     | array size                | adr -- n       |
 
-### Miscellaneous
+### <a name='system-variables-1'></a>System Variables
+
+| Symbol | Description               | Effect  |
+| ------ | ------------------------- | ------- |
+| /c     | carry flag variable       | -- b    |
+| /e     | else condition            | -- b    |
+| /f     | false                     | -- b    |
+| /h     | heap pointer              | -- adr  |
+| /i     | loop counter              | -- n    |
+| /j     | outer loop counter        | -- n    |
+| /k     | text input buffer pointer | -- adr  |
+| /p     | last access pointer       | -- adr  |
+| /r     | last division remainder   | -- adr  |
+| /s     | data stack start          | -- adr  |
+| /t     | true                      | -- b    |
+| /u     | unlimited loop            | -- n    |
+| /z     | last definition           | -- char |
+
+### <a name='miscellaneous'></a>Miscellaneous
 
 | Symbol | Description                                   | Effect |
 | ------ | --------------------------------------------- | ------ |
-| \\\\   | comment text, skips reading until end of line | --     |
+| //     | comment text, skips reading until end of line | --     |
 
-### Utility commands
+### <a name='utility-commands'></a>Utility commands
 
-| Symbol | Description                     | Effect   |
-| ------ | ------------------------------- | -------- |
-| \\#0   | execute machine code at address | adr -- ? |
-| \\#1   |                                 | --       |
-| \\#2   |                                 | -- val   |
-| \\#3   | stack depth                     | -- val   |
-| \\#4   | print stack                     | --       |
-| \\#5   | print prompt                    | --       |
-| \\#6   | edit command                    | val --   |
+| Symbol | Description   | Effect  |
+| ------ | ------------- | ------- |
+| /UN    | prints a CRLF | --      |
+| /UE    | edit command  | char -- |
+| /UP    | print prompt  | --      |
+| /US    | print stack   | --      |
 
-### Control keys
+### <a name='control-keys'></a>Control keys
 
-| Symbol | Description                     |
-| ------ | ------------------------------- |
-| ^B     | toggle base decimal/hexadecimal |
-| ^E     | edit a definition               |
-| ^H     | backspace                       |
-| ^J     | re-edit                         |
-| ^L     | list definitions                |
-| ^P     | print stack                     |
+| Symbol | Description       |
+| ------ | ----------------- |
+| ^E     | edit a definition |
+| ^H     | backspace         |
+| ^J     | re-edit           |
+| ^L     | list definitions  |
+| ^P     | print stack       |
