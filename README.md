@@ -643,11 +643,11 @@ commands from the keyboard.
 
 | Symbol | Description                                    | Effect |
 | ------ | ---------------------------------------------- | ------ |
-| ?      | read a char from input                         | -- c   |
 | .      | print the number on the stack as a decimal     | a --   |
 | ,      | print the number on the stack as a hexadecimal | a --   |
 | \`     | print the literal string between \` and \`     | --     |
 | /E     | prints a character to output                   | n --   |
+| /K     | read a char from input                         | -- c   |
 | /O     | output to an I/O port                          | n p -- |
 | /I     | input from a I/O port                          | p -- n |
 | '      | the following number is in hexadecimal         | a --   |
