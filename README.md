@@ -1,4 +1,4 @@
-# Mindy Language 1.3
+# Mindy Language 0.1
 
 Mindy is a minimalist character-based interpreter but one which aims at fast performance, readability and ease of use. It is written for the Z80 microprocessor and is 2K.
 
