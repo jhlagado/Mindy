@@ -17,7 +17,7 @@ CALL init
 ld HL,testGetCharImpl                       ; change getchar implmentation to use tbuf
 LD (GETCVEC),HL
 
-testInput "3."
+testInput {":A1;\r",5,"A"}
 JP interpret
 
 testGetCharImpl:
